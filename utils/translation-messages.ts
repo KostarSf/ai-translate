@@ -8,7 +8,12 @@ export interface TranslateMessage {
   context?: TranslationContext;
 }
 
-export type TranslateResponse = { ok: true; translation: string } | { ok: false; error: string };
+export interface TranslationResult {
+  translation: string;
+  wordNote?: string;
+}
+
+export type TranslateResponse = ({ ok: true } & TranslationResult) | { ok: false; error: string };
 
 export function isTranslateMessage(value: unknown): value is TranslateMessage {
   if (!value || typeof value !== 'object') return false;

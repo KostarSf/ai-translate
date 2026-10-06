@@ -16,7 +16,7 @@ test('sends translation request with fixed model and low reasoning', async (t) =
     assert.deepEqual(body.messages[1], { role: 'user', content: 'Hello' });
     return Response.json({ choices: [{ message: { content: ' Привет ' }, finish_reason: 'stop' }] });
   });
-  assert.equal(await translateText(request), 'Привет');
+  assert.deepEqual(await translateText(request), { translation: 'Привет' });
 });
 
 test('does not send requests without a key or text', async (t) => {
@@ -31,14 +31,42 @@ test('sends context as separate data and instructs the model to translate only s
     const body = JSON.parse(options.body);
     assert.match(body.messages[0].content, /Translate ONLY selectedText/);
     assert.deepEqual(JSON.parse(body.messages[1].content), {
-      selectedText: 'bank', contextBefore: 'We walked to the river.',
+      selectedText: 'river bank', contextBefore: 'We walked to the river.',
       containingSentence: 'She sat on the bank.', contextAfter: 'The water was cold.',
     });
     return Response.json({ choices: [{ message: { content: 'берег' }, finish_reason: 'stop' }] });
   });
-  assert.equal(await translateText({ ...request, text: 'bank', context: {
+  assert.deepEqual(await translateText({ ...request, text: 'river bank', context: {
     before: 'We walked to the river.', containing: 'She sat on the bank.', after: 'The water was cold.',
-  } }), 'берег');
+  } }), { translation: 'берег' });
+});
+
+test('requests structured word note covering terms and compound or multi-word puns', async (t) => {
+  t.mock.method(globalThis, 'fetch', async (_url, options) => {
+    const body = JSON.parse(options.body);
+    assert.equal(body.response_format.type, 'json_schema');
+    assert.deepEqual(body.response_format.json_schema.schema.required, ['translation', 'wordNote']);
+    assert.equal(body.provider.require_parameters, true);
+    assert.equal(body.reasoning.effort, 'low');
+    assert.match(body.messages[0].content, /specialized terminology/);
+    assert.match(body.messages[0].content, /compound and multi-word puns/);
+    assert.match(body.messages[0].content, /Do not invent wordplay/);
+    assert.match(body.messages[0].content, /state uncertainty/);
+    const content = JSON.stringify({ translation: ' берег ', wordNote: ' Здесь bank означает берег реки, а не финансовое учреждение. ' });
+    return Response.json({ choices: [{ message: { content }, finish_reason: 'stop' }] });
+  });
+  assert.deepEqual(await translateText({ ...request, text: 'bank', context: {
+    before: 'We walked to the river.', containing: 'She sat on the bank.', after: 'The water was cold.',
+  } }), { translation: 'берег', wordNote: 'Здесь bank означает берег реки, а не финансовое учреждение.' });
+});
+
+test('rejects malformed word notes instead of displaying JSON as translation', async (t) => {
+  for (const content of ['not json', 'null', '{}', '{"translation":"берег"}',
+    '{"translation":"берег","wordNote":""}', '{"translation":2,"wordNote":"note"}']) {
+    const fetch = t.mock.method(globalThis, 'fetch', async () => Response.json({ choices: [{ message: { content } }] }));
+    await assert.rejects(translateText({ ...request, text: 'bank', context: { before: '', containing: 'A river bank.', after: '' } }), /справку/);
+    fetch.mock.restore();
+  }
 });
 
 test('handles authentication, balance, and rate limit errors without exposing response details', async (t) => {

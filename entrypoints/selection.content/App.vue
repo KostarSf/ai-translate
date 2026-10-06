@@ -10,6 +10,7 @@ const props = defineProps<{
 const open = ref(false);
 const loading = ref(false);
 const translation = ref('');
+const wordNote = ref('');
 const error = ref('');
 let requestId = 0;
 
@@ -18,7 +19,10 @@ watch(() => props.state.selection, () => {
   open.value = false;
   loading.value = false;
   translation.value = '';
+  wordNote.value = '';
   error.value = '';
+  translation.value = '';
+  wordNote.value = '';
 });
 
 const cardStyle = computed(() => ({
@@ -44,6 +48,7 @@ async function translate() {
     if (currentId !== requestId) return;
     if (!response?.ok) throw new Error(response?.error ?? 'Не удалось получить ответ расширения.');
     translation.value = response.translation;
+    wordNote.value = response.wordNote ?? '';
   } catch (cause) {
     if (currentId === requestId) error.value = cause instanceof Error ? cause.message : 'Не удалось перевести текст.';
   } finally {
@@ -85,7 +90,13 @@ function keepSelection(event: PointerEvent) {
       <header><strong>Перевод</strong><button type="button" class="close" aria-label="Закрыть перевод" @click="close">×</button></header>
       <p v-if="loading" role="status">Переводим…</p>
       <p v-else-if="error" class="error" role="alert">{{ error }}</p>
-      <p v-else class="result" dir="auto" aria-live="polite">{{ translation }}</p>
+      <template v-else>
+        <p class="result" dir="auto" aria-live="polite">{{ translation }}</p>
+        <section v-if="wordNote" class="word-note" aria-label="Справка о слове">
+          <strong>О слове</strong>
+          <p dir="auto">{{ wordNote }}</p>
+        </section>
+      </template>
       <footer>
         <button v-if="error" type="button" @click="translate">Повторить</button>
         <button type="button" @click="settings">Настройки</button>

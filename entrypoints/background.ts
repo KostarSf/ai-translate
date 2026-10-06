@@ -10,7 +10,7 @@ async function translate(message: TranslateMessage): Promise<TranslateResponse> 
   const timeout = setTimeout(() => controller.abort(), 25_000);
   try {
     const settings = await loadSettings();
-    return { ok: true, translation: await translateText({
+    return { ok: true, ...await translateText({
       text: message.text,
       context: message.context,
       targetLanguage: message.targetLanguage ?? settings.targetLanguage,

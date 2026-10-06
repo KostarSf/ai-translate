@@ -42,5 +42,8 @@ header { display: flex; justify-content: space-between; align-items: center; gap
 p { margin: 12px 0; }
 .result { white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
 .error { color: #b91c1c; }
+.word-note { border-top: 1px solid #e2e8f0; padding-top: 12px; color: #475569; font-size: 13px; }
+.word-note strong { color: #334155; font-size: 12px; }
+.word-note p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 footer { display: flex; gap: 12px; margin-top: 12px; }
 footer button { border: 0; padding: 0; color: #4338ca; background: transparent; font-size: 12px; }
