@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { browser } from 'wxt/browser';
 import type { PageSelection } from '../../utils/selection';
 import type { TranslateMessage, TranslateResponse } from '../../utils/translation-messages';
+import Dialogue from './Dialogue.vue';
 
 const props = defineProps<{
   state: { selection: PageSelection | null; x: number; y: number; visible: boolean; pinned: boolean };
@@ -21,12 +22,13 @@ watch(() => props.state.selection, () => {
   translation.value = '';
   wordNote.value = '';
   error.value = '';
-  translation.value = '';
-  wordNote.value = '';
 });
 
 const cardStyle = computed(() => ({
   left: `${Math.max(8, Math.min(props.state.x, innerWidth - 328))}px`,
+  maxHeight: `${Math.max(100, Math.min(600, props.state.y > innerHeight / 2
+    ? props.state.y - 16
+    : innerHeight - props.state.y - 50))}px`,
   ...(props.state.y > innerHeight / 2
     ? { bottom: `${Math.max(8, innerHeight - props.state.y + 8)}px` }
     : { top: `${props.state.y + 42}px` }),
@@ -39,6 +41,8 @@ async function translate() {
   open.value = true;
   loading.value = true;
   error.value = '';
+  translation.value = '';
+  wordNote.value = '';
   const currentId = ++requestId;
   try {
     const message: TranslateMessage = {
@@ -78,7 +82,7 @@ function keepSelection(event: PointerEvent) {
 </script>
 
 <template>
-  <div v-if="state.selection && state.visible" class="translation-ui" @pointerdown.stop="keepSelection" @pointerup.stop @keydown.esc.stop="close">
+  <div v-if="state.selection" v-show="state.visible" class="translation-ui" @pointerdown.stop="keepSelection" @pointerup.stop @keydown.esc.stop="close">
     <button class="translate-icon" type="button" title="Перевести выделенный текст"
       aria-label="Перевести выделенный текст" :aria-expanded="open" :disabled="loading"
       :style="{ left: `${state.x}px`, top: `${state.y}px` }" @click="translate">
@@ -96,6 +100,8 @@ function keepSelection(event: PointerEvent) {
           <strong>О слове</strong>
           <p dir="auto">{{ wordNote }}</p>
         </section>
+        <Dialogue v-if="translation && state.selection" :text="state.selection.text" :context="state.selection.context"
+          :result="{ translation, ...(wordNote ? { wordNote } : {}) }" />
       </template>
       <footer>
         <button v-if="error" type="button" @click="translate">Повторить</button>

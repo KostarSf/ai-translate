@@ -51,13 +51,14 @@ test('requests structured word note covering terms and compound or multi-word pu
     assert.match(body.messages[0].content, /specialized terminology/);
     assert.match(body.messages[0].content, /compound and multi-word puns/);
     assert.match(body.messages[0].content, /Do not invent wordplay/);
-    assert.match(body.messages[0].content, /state uncertainty/);
-    const content = JSON.stringify({ translation: ' берег ', wordNote: ' Здесь bank означает берег реки, а не финансовое учреждение. ' });
+    assert.match(body.messages[0].content, /Silently omit unsupported or uncertain classifications/);
+    assert.match(body.messages[0].content, /Never state what the word is not/);
+    const content = JSON.stringify({ translation: ' берег ', wordNote: ' Здесь bank обозначает берег реки. ' });
     return Response.json({ choices: [{ message: { content }, finish_reason: 'stop' }] });
   });
   assert.deepEqual(await translateText({ ...request, text: 'bank', context: {
     before: 'We walked to the river.', containing: 'She sat on the bank.', after: 'The water was cold.',
-  } }), { translation: 'берег', wordNote: 'Здесь bank означает берег реки, а не финансовое учреждение.' });
+  } }), { translation: 'берег', wordNote: 'Здесь bank обозначает берег реки.' });
 });
 
 test('rejects malformed word notes instead of displaying JSON as translation', async (t) => {

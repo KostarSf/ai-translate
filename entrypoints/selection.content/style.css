@@ -47,3 +47,25 @@ p { margin: 12px 0; }
 .word-note p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 footer { display: flex; gap: 12px; margin-top: 12px; }
 footer button { border: 0; padding: 0; color: #4338ca; background: transparent; font-size: 12px; }
+.dialogue { margin-top: 14px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+.dialogue-form { display: flex; gap: 8px; align-items: flex-end; }
+.dialogue-form textarea {
+  flex: 1; min-width: 0; max-height: 100px; resize: vertical;
+  font: inherit; font-size: 13px; line-height: 1.5; padding: 8px 10px;
+  border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #1e293b;
+}
+.dialogue-form textarea:focus-visible { outline: 2px solid #818cf8; outline-offset: 1px; }
+.send-icon {
+  display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px;
+  padding: 0; border: 0; border-radius: 8px; background: #4338ca; color: #fff;
+}
+.send-icon:disabled { opacity: .45; cursor: default; }
+.dialogue-history { margin-top: 14px; }
+.dialogue-title { display: block; margin-bottom: 8px; font-size: 12px; color: #475569; }
+.dialogue-thread { max-height: 240px; overflow-y: auto; overscroll-behavior: contain; }
+.dialogue-message { padding: 9px 11px; margin: 8px 0; border-radius: 9px; background: #f1f5f9; font-size: 13px; }
+.dialogue-message.user { margin-left: 24px; background: #eef2ff; text-align: right; }
+.dialogue-message.assistant { margin-right: 12px; }
+.dialogue-message span { font-size: 11px; color: #64748b; }
+.dialogue-message p { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.dialogue-status { font-size: 12px; color: #64748b; margin: 8px 0; }

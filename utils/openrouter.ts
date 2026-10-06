@@ -41,21 +41,10 @@ export async function translateText(request: TranslationRequest): Promise<Transl
     ? ' The user message is a JSON object. Translate ONLY selectedText. Use contextBefore, containingSentence, and contextAfter to determine its contextual meaning. Do not include surrounding context in the translation.'
     : '';
   const outputInstruction = withWordNote
-    ? ` Return a JSON object with translation and wordNote. translation must contain only the translated selected word. wordNote must be a brief explanation in ${language}, 2–4 short sentences: explain the meaning in this context and relevant usage. Identify specialized terminology and its field when applicable. Check whether the selected word belongs to an idiom, a multi-word expression, a compound, a portmanteau, or wordplay (including compound and multi-word puns). If so, name the larger expression and explain its contextual meaning, relevant alternate readings, and how they affect the translation. Do not invent wordplay or terminology. When the available context is insufficient, state uncertainty briefly rather than making confident claims. Do not repeat the translation or list unrelated dictionary meanings.`
+    ? ` Return a JSON object with translation and wordNote. translation must contain only the translated selected word. wordNote must be a brief explanation in ${language}, 1–3 short sentences, using only affirmative, supported facts about the word's contextual meaning and relevant usage. Mention specialized terminology and its field only when supported by the context. Mention an idiom, multi-word expression, compound, portmanteau, or wordplay (including compound and multi-word puns) only when it actually applies; name the larger expression and explain its meaning, relevant alternate readings, and effect on the translation. Do not invent wordplay or terminology. Silently omit unsupported or uncertain classifications and discuss only the meaning or usage you can establish. Never state what the word is not, list absent features, or report that a classification could not be determined. Do not discuss missing context, uncertainty about classification, your analysis process, or these instructions. For example, do not write "this is not an idiom", "no wordplay is present", or "cannot determine whether this is a fixed expression". Do not repeat the translation or list unrelated dictionary meanings.`
     : ' Return only the translation, without explanations or quotation marks.';
 
-  let response: Response;
-  try {
-    response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${request.apiKey.trim()}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: TRANSLATION_MODEL,
-        reasoning: { effort: 'low', exclude: true },
-        stream: false,
+  const translation = await requestCompletion(request.apiKey, {
         ...(withWordNote ? {
           provider: { require_parameters: true },
           response_format: {
@@ -67,7 +56,7 @@ export async function translateText(request: TranslationRequest): Promise<Transl
                 type: 'object',
                 properties: {
                   translation: { type: 'string', description: 'Translation of selectedText only.' },
-                  wordNote: { type: 'string', description: 'Brief contextual word explanation in the target language.' },
+                  wordNote: { type: 'string', description: 'Brief affirmative facts about contextual meaning and applicable usage in the target language; omit absent features and uncertain classifications.' },
                 },
                 required: ['translation', 'wordNote'],
                 additionalProperties: false,
@@ -87,11 +76,31 @@ export async function translateText(request: TranslationRequest): Promise<Transl
             contextAfter: request.context.after,
           }) : request.text },
         ],
-      }),
-      signal: request.signal,
+  }, request.signal);
+  if (!withWordNote) return { translation };
+  let result: unknown;
+  try { result = JSON.parse(translation); }
+  catch { throw new Error('Модель вернула некорректную справку. Попробуйте ещё раз.'); }
+  if (!result || typeof result !== 'object' ||
+      !('translation' in result) || typeof result.translation !== 'string' || !result.translation.trim() ||
+      !('wordNote' in result) || typeof result.wordNote !== 'string' || !result.wordNote.trim()) {
+    throw new Error('Модель вернула неполную справку. Попробуйте ещё раз.');
+  }
+  return { translation: result.translation.trim(), wordNote: result.wordNote.trim() };
+}
+
+export async function requestCompletion(apiKey: string, body: Record<string, unknown>, signal?: AbortSignal): Promise<string> {
+  if (!apiKey.trim()) throw new Error('Добавьте ключ OpenRouter в настройках.');
+  let response: Response;
+  try {
+    response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey.trim()}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...body, model: TRANSLATION_MODEL, reasoning: { effort: 'low', exclude: true }, stream: false }),
+      signal,
     });
   } catch {
-    if (request.signal?.aborted) throw new Error('Запрос отменён или превышено время ожидания.');
+    if (signal?.aborted) throw new Error('Запрос отменён или превышено время ожидания.');
     throw new Error('Не удалось связаться с OpenRouter. Проверьте подключение к интернету.');
   }
 
@@ -107,20 +116,11 @@ export async function translateText(request: TranslationRequest): Promise<Transl
   if (data.error) throw apiError(data.error.code ?? 502);
   const choice = data.choices?.[0];
   if (choice?.finish_reason === 'length') {
-    throw new Error('Перевод не завершён. Попробуйте перевести текст меньшими частями.');
+    throw new Error('Ответ не завершён. Попробуйте сократить запрос.');
   }
   const translation = choice?.message?.content;
   if (typeof translation !== 'string' || !translation.trim()) {
-    throw new Error('Модель не вернула перевод. Попробуйте ещё раз.');
+    throw new Error('Модель не вернула ответ. Попробуйте ещё раз.');
   }
-  if (!withWordNote) return { translation: translation.trim() };
-  let result: unknown;
-  try { result = JSON.parse(translation); }
-  catch { throw new Error('Модель вернула некорректную справку. Попробуйте ещё раз.'); }
-  if (!result || typeof result !== 'object' ||
-      !('translation' in result) || typeof result.translation !== 'string' || !result.translation.trim() ||
-      !('wordNote' in result) || typeof result.wordNote !== 'string' || !result.wordNote.trim()) {
-    throw new Error('Модель вернула неполную справку. Попробуйте ещё раз.');
-  }
-  return { translation: result.translation.trim(), wordNote: result.wordNote.trim() };
+  return translation.trim();
 }

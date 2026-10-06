@@ -77,7 +77,13 @@ export default defineContentScript({
     ctx.addEventListener(document, 'keyup', (event) => {
       if (insideUi(event)) return;
       if (event.key === 'Escape') hide();
-      else { state.pinned = false; schedule(); }
+      // A keyup can target the page if a focused control loses focus on keydown.
+      // Only actual selection shortcuts should re-read and replace the range.
+      else if ((event.shiftKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) ||
+        ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a')) {
+        state.pinned = false;
+        schedule();
+      }
     });
     ctx.addEventListener(document, 'scroll', position, { capture: true, passive: true });
     ctx.addEventListener(window, 'resize', position);
