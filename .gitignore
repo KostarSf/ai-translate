@@ -1,0 +1,11 @@
+node_modules/
+.pnpm-store/
+.output/
+.wxt/
+web-ext.config.ts
+*.local
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
