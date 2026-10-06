@@ -13,6 +13,7 @@
     "zip": "wxt zip --browser chrome --mv3",
     "zip:firefox": "wxt zip --browser firefox --mv3",
     "typecheck": "vue-tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "postinstall": "wxt prepare"
   },
   "dependencies": {
@@ -20,11 +21,12 @@
   },
   "devDependencies": {
     "@wxt-dev/module-vue": "^1.0.0",
+    "jsdom": "^30.1.2",
     "typescript": "^5.9.0",
     "vue-tsc": "^3.0.0",
     "wxt": "^0.21.4"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   }
 }

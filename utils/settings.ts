@@ -4,6 +4,7 @@ export type TargetLanguage = 'ru' | 'en';
 
 export interface Settings {
   targetLanguage: TargetLanguage;
+  apiKey: string;
 }
 
 export const languageLabels: Record<TargetLanguage, string> = {
@@ -14,6 +15,11 @@ export const languageLabels: Record<TargetLanguage, string> = {
 export async function loadSettings(): Promise<Settings> {
   const { settings } = await browser.storage.local.get('settings');
   return {
+    apiKey:
+      typeof settings === 'object' && settings !== null &&
+      'apiKey' in settings && typeof settings.apiKey === 'string'
+        ? settings.apiKey.trim()
+        : '',
     targetLanguage:
       typeof settings === 'object' &&
       settings !== null &&

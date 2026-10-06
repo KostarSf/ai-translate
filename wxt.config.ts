@@ -4,8 +4,9 @@ export default defineConfig({
   modules: ['@wxt-dev/module-vue'],
   manifest: ({ browser }) => ({
     name: 'AI Translate',
-    description: 'Заготовка расширения на Vue для Chrome и Firefox.',
+    description: 'Перевод текста с помощью OpenRouter.',
     permissions: ['storage'],
+    host_permissions: ['http://*/*', 'https://*/*'],
     ...(browser === 'firefox'
       ? {
           browser_specific_settings: {
@@ -13,7 +14,7 @@ export default defineConfig({
               id: 'ai-translate@example.org',
               strict_min_version: '140.0',
               data_collection_permissions: {
-                required: ['none'],
+                required: ['authenticationInfo', 'personalCommunications', 'websiteContent'],
               },
             },
           },

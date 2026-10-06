@@ -38,7 +38,9 @@ p {
 }
 
 button,
-select {
+select,
+input,
+textarea {
   font: inherit;
   border-radius: 8px;
   padding: 10px 14px;
@@ -60,10 +62,22 @@ button:disabled {
   cursor: wait;
 }
 
-select {
+select,
+input,
+textarea {
   border: 1px solid #cbd5e1;
   background: #fff;
   color: inherit;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+a {
+  color: #4338ca;
 }
 
 :focus-visible {
